@@ -4,14 +4,35 @@ import Sidebar from '../../layout/Sidebar';
 
 const Reports = () => {
     const [selectedReport, setSelectedReport] = useState(null);
+    const [filterType, setFilterType] = useState('all');
 
     const reportCategories = [
-        { id: 1, title: 'Internship Records (Batch 2025)', type: 'Excel', date: 'Generated: Today', chartType: 'pie', data: [70, 30], labels: ['Placed', 'Seeking'] },
-        { id: 2, title: 'Placement Statistics', type: 'PDF', date: 'Generated: Yesterday', chartType: 'bar', data: [45, 80, 20], labels: ['CSE', 'ECE', 'Mech'] },
-        { id: 3, title: 'Monthly Attendance Summary', type: 'PDF', date: 'Generated: 2 days ago', chartType: 'pie', data: [85, 15], labels: ['Present', 'Absent'] },
-        { id: 4, title: 'Pending NOC Requests', type: 'CSV', date: 'Generated: Today', chartType: 'bar', data: [12, 5, 8], labels: ['CSE', 'ECE', 'BCA'] },
-        { id: 5, title: 'Internship to PPO Conversion', type: 'PDF', date: 'Generated: Today', chartType: 'pie', data: [40, 60], labels: ['Converted', 'Intern Only'] },
+        { id: 1, title: 'Internship Records (Batch 2025)', type: 'Excel', date: 'Generated: Today', chartType: 'pie', data: [70, 30], labels: ['Placed', 'Seeking'], icon: '📊', color: 'from-blue-500 to-blue-600' },
+        { id: 2, title: 'Placement Statistics', type: 'PDF', date: 'Generated: Yesterday', chartType: 'bar', data: [45, 80, 20], labels: ['CSE', 'ECE', 'Mech'], icon: '📈', color: 'from-green-500 to-green-600' },
+        { id: 3, title: 'Monthly Attendance Summary', type: 'PDF', date: 'Generated: 2 days ago', chartType: 'pie', data: [85, 15], labels: ['Present', 'Absent'], icon: '✅', color: 'from-purple-500 to-purple-600' },
+        { id: 4, title: 'Pending NOC Requests', type: 'CSV', date: 'Generated: Today', chartType: 'bar', data: [12, 5, 8], labels: ['CSE', 'ECE', 'BCA'], icon: '📋', color: 'from-orange-500 to-orange-600' },
+        { id: 5, title: 'Internship to PPO Conversion', type: 'PDF', date: 'Generated: Today', chartType: 'pie', data: [40, 60], labels: ['Converted', 'Intern Only'], icon: '🎯', color: 'from-pink-500 to-pink-600' },
     ];
+
+    const stats = [
+        { label: 'Total Reports', value: '5', icon: '📄', color: 'bg-blue-50 text-blue-600' },
+        { label: 'Generated Today', value: '3', icon: '⚡', color: 'bg-green-50 text-green-600' },
+        { label: 'Placement Rate', value: '70%', icon: '🎓', color: 'bg-purple-50 text-purple-600' },
+        { label: 'Last Updated', value: 'Today', icon: '🕐', color: 'bg-orange-50 text-orange-600' },
+    ];
+
+    const getTypeColor = (type) => {
+        const colors = {
+            'Excel': 'bg-green-100 text-green-800',
+            'PDF': 'bg-red-100 text-red-800',
+            'CSV': 'bg-blue-100 text-blue-800'
+        };
+        return colors[type] || 'bg-gray-100 text-gray-800';
+    };
+
+    const filteredReports = filterType === 'all' 
+        ? reportCategories 
+        : reportCategories.filter(r => r.type === filterType);
 
     const renderChart = (report) => {
         if (report.chartType === 'pie') {
@@ -52,38 +73,102 @@ const Reports = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 flex flex-col">
             <Navbar />
             <div className="flex flex-1">
                 <Sidebar role="faculty" />
-                <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+                <main className="flex-1 p-6 md:p-10 overflow-y-auto">
                     <div className="max-w-7xl mx-auto">
-                        <h1 className="text-2xl font-bold text-gray-900 mb-6">Reports & Analytics</h1>
+                        {/* Header Section */}
+                        <div className="mb-10">
+                            <h1 className="text-4xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
+                            <p className="text-lg text-gray-600">Track and analyze internship data, placements, and student performance</p>
+                        </div>
 
-                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                            {reportCategories.map((report) => (
-                                <div key={report.id} className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-all duration-300 flex flex-col">
-                                    <div className="p-5 flex-1">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <div className="flex-shrink-0">
-                                                    <svg className="h-6 w-6 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div className="ml-5 w-0 flex-1">
-                                                    <dl>
-                                                        <dt className="text-sm font-medium text-gray-900 truncate">
-                                                            {report.title}
-                                                        </dt>
-                                                        <dd>
-                                                            <div className="text-xs text-gray-500 mt-1">
-                                                                {report.type} • {report.date}
-                                                            </div>
-                                                        </dd>
-                                                    </dl>
-                                                </div>
+                        {/* Statistics Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                            {stats.map((stat, idx) => (
+                                <div key={idx} className={`${stat.color} rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1`}>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
+                                            <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                                        </div>
+                                        <span className="text-4xl">{stat.icon}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Filter Section */}
+                        <div className="mb-8 flex flex-wrap gap-3">
+                            <button
+                                onClick={() => setFilterType('all')}
+                                className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 ${
+                                    filterType === 'all'
+                                        ? 'bg-indigo-600 text-white shadow-lg'
+                                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-indigo-600'
+                                }`}
+                            >
+                                All Reports
+                            </button>
+                            <button
+                                onClick={() => setFilterType('PDF')}
+                                className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 ${
+                                    filterType === 'PDF'
+                                        ? 'bg-red-500 text-white shadow-lg'
+                                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-500'
+                                }`}
+                            >
+                                PDF Reports
+                            </button>
+                            <button
+                                onClick={() => setFilterType('Excel')}
+                                className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 ${
+                                    filterType === 'Excel'
+                                        ? 'bg-green-500 text-white shadow-lg'
+                                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'
+                                }`}
+                            >
+                                Excel Files
+                            </button>
+                            <button
+                                onClick={() => setFilterType('CSV')}
+                                className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 ${
+                                    filterType === 'CSV'
+                                        ? 'bg-blue-500 text-white shadow-lg'
+                                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-500'
+                                }`}
+                            >
+                                CSV Files
+                            </button>
+                        </div>
+
+                        {/* Reports Grid */}
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            {filteredReports.map((report) => (
+                                <div
+                                    key={report.id}
+                                    className="bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-200 transform hover:-translate-y-2 flex flex-col"
+                                >
+                                    {/* Card Header with Gradient */}
+                                    <div className={`bg-gradient-to-r ${report.color} p-6 text-white relative overflow-hidden`}>
+                                        <div className="absolute top-0 right-0 w-20 h-20 bg-white opacity-10 rounded-full -mr-10 -mt-10"></div>
+                                        <div className="flex items-start justify-between relative z-10">
+                                            <div>
+                                                <p className="text-3xl mb-2">{report.icon}</p>
+                                                <h3 className="text-lg font-bold leading-tight">{report.title}</h3>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Card Body */}
+                                    <div className="p-6 flex-1">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getTypeColor(report.type)}`}>
+                                                {report.type}
+                                            </span>
+                                            <span className="text-xs text-gray-500 font-medium">{report.date}</span>
                                         </div>
 
                                         {/* Chart Section */}
@@ -93,14 +178,27 @@ const Reports = () => {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-between items-center">
+
+                                    {/* Card Footer */}
+                                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-100 flex justify-between items-center">
                                         <button
                                             onClick={() => setSelectedReport(selectedReport === report.id ? null : report.id)}
-                                            className="text-sm font-medium text-indigo-600 hover:text-indigo-900 focus:outline-none"
+                                            className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors duration-200"
                                         >
-                                            {selectedReport === report.id ? 'Hide Visuals' : 'View Visuals'}
+                                            {selectedReport === report.id ? (
+                                                <>
+                                                    <span>📊</span>
+                                                    <span>Hide Visuals</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>📈</span>
+                                                    <span>View Visuals</span>
+                                                </>
+                                            )}
                                         </button>
-                                        <button className="text-sm font-medium text-gray-500 hover:text-gray-900">
+                                        <button className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors duration-200 flex items-center gap-1">
+                                            <span>⬇️</span>
                                             Download
                                         </button>
                                     </div>
