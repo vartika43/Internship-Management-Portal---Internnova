@@ -5,10 +5,20 @@ const Login = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
 
     const handleLogin = (role) => {
-        // In a real app, we would validate credentials here
+        // Basic front‑end validation before allowing login
+        if (!email || !password) {
+            setError('Please enter both email and password.');
+            return;
+        }
+
+        // TODO: Replace this with a real API call that
+        // verifies credentials and returns a token/role.
         console.log(`Logging in as ${role}...`);
+
+        // Only redirect after "successful" login
         if (role === 'student') navigate('/student/dashboard');
         else if (role === 'faculty') navigate('/faculty/dashboard');
         else if (role === 'admin') navigate('/admin/dashboard');
@@ -31,6 +41,11 @@ const Login = () => {
 
                     {/* Form */}
                     <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                        {error && (
+                            <div className="mb-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                                {error}
+                            </div>
+                        )}
                         <div>
                             <label htmlFor="email" className="block text-sm font-semibold text-gray-800 mb-2">
                                 Email Address
