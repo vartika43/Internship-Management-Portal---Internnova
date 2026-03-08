@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { authAPI } from '../../api/api';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -7,21 +8,33 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    const handleLogin = (role) => {
+    const handleLogin = async (e, role) => {
+        e.preventDefault();
+        
         // Basic front‑end validation before allowing login
         if (!email || !password) {
             setError('Please enter both email and password.');
             return;
         }
 
-        // TODO: Replace this with a real API call that
-        // verifies credentials and returns a token/role.
-        console.log(`Logging in as ${role}...`);
-
-        // Only redirect after "successful" login
-        if (role === 'student') navigate('/student/dashboard');
-        else if (role === 'faculty') navigate('/faculty/dashboard');
-        else if (role === 'admin') navigate('/admin/dashboard');
+        try {
+            const res = await authAPI.login(email, password);
+            const { token, user } = res.data;
+            
+            // Store token and user info
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            // Redirect based on role
+            if (user.role === 'student') navigate('/student/dashboard');
+            else if (user.role === 'faculty') navigate('/faculty/dashboard');
+            else if (user.role === 'admin') navigate('/admin/dashboard');
+            else {
+                setError('Invalid user role');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+        }
     };
 
     return (
@@ -88,30 +101,30 @@ const Login = () => {
                                 />
                                 <span className="ml-2 text-gray-700 group-hover:text-gray-900">Remember me</span>
                             </label>
-                            <a href="#" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                            <button type="button" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                                 Forgot password?
-                            </a>
+                            </button>
                         </div>
 
                         <div className="space-y-3 pt-4">
                             <p className="text-center text-xs font-medium text-gray-600 uppercase tracking-wide">Select role to continue</p>
                             <button
                                 type="button"
-                                onClick={() => handleLogin('student')}
+                                onClick={(e) => handleLogin(e, 'student')}
                                 className="w-full flex justify-center items-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
                             >
                                 <span>👨‍🎓</span> Login as Student
                             </button>
                             <button
                                 type="button"
-                                onClick={() => handleLogin('faculty')}
+                                onClick={(e) => handleLogin(e, 'faculty')}
                                 className="w-full flex justify-center items-center gap-2 py-3 px-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-purple-800 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
                             >
                                 <span>👨‍🏫</span> Login as Faculty
                             </button>
                             <button
                                 type="button"
-                                onClick={() => handleLogin('admin')}
+                                onClick={(e) => handleLogin(e, 'admin')}
                                 className="w-full flex justify-center items-center gap-2 py-3 px-4 bg-gradient-to-r from-gray-700 to-gray-800 text-white font-semibold rounded-lg hover:from-gray-800 hover:to-gray-900 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
                             >
                                 <span>⚙️</span> Login as Admin

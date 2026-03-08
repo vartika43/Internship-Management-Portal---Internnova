@@ -23,6 +23,11 @@ const userSchema = new mongoose.Schema(
       enum: ["student", "admin", "faculty"],
       default: "student",
     },
+    // Profile fields (for students)
+    department: { type: String, default: "" },
+    year: { type: String, default: "" },
+    skills: { type: [String], default: [] },
+    resume: { type: String, default: "" },
   },
   { timestamps: true }
 );
