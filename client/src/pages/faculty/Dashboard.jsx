@@ -1,8 +1,106 @@
-import React from 'react';
-import Sidebar from '../../layout/Sidebar';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../../layout/Navbar';
+import Sidebar from '../../layout/Sidebar';
+import { internshipAPI, applicationAPI } from '../../api/api';
 
 const FacultyDashboard = () => {
+    const [internships, setInternships] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [formData, setFormData] = useState({
+        title: '',
+        companyName: '',
+        description: '',
+        requiredSkills: '',
+        duration: '',
+        deadline: '',
+    });
+
+    const fetchListings = async () => {
+        try {
+            const res = await internshipAPI.getMyListings();
+            setInternships(res.data || []);
+        } catch {
+            setInternships([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchListings();
+    }, []);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const openCreate = () => {
+        setEditingId(null);
+        setFormData({
+            title: '',
+            companyName: '',
+            description: '',
+            requiredSkills: '',
+            duration: '',
+            deadline: '',
+        });
+        setShowModal(true);
+    };
+
+    const openEdit = (job) => {
+        setEditingId(job._id);
+        setFormData({
+            title: job.title,
+            companyName: job.companyName,
+            description: job.description,
+            requiredSkills: Array.isArray(job.requiredSkills) ? job.requiredSkills.join(', ') : job.requiredSkills || '',
+            duration: job.duration,
+            deadline: job.deadline ? new Date(job.deadline).toISOString().slice(0, 10) : '',
+        });
+        setShowModal(true);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const payload = {
+                ...formData,
+                requiredSkills: formData.requiredSkills ? formData.requiredSkills.split(',').map((s) => s.trim()).filter(Boolean) : [],
+            };
+            if (editingId) {
+                await internshipAPI.update(editingId, payload);
+            } else {
+                await internshipAPI.create(payload);
+            }
+            setShowModal(false);
+            fetchListings();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to save');
+        }
+    };
+
+    const formatDate = (d) => (d ? new Date(d).toLocaleDateString() : '-');
+    const getApplicantCount = async (id) => {
+        try {
+            const res = await applicationAPI.getByInternship(id);
+            return res.data?.length || 0;
+        } catch {
+            return 0;
+        }
+    };
+
+    const [applicantCounts, setApplicantCounts] = useState({});
+    useEffect(() => {
+        internships.forEach(async (job) => {
+            const count = await getApplicantCount(job._id);
+            setApplicantCounts((prev) => ({ ...prev, [job._id]: count }));
+        });
+    }, [internships]);
+
+    const activeCount = internships.filter((i) => i.status === 'active').length;
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <Navbar />
@@ -12,138 +110,177 @@ const FacultyDashboard = () => {
                     <div className="max-w-7xl mx-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h1 className="text-2xl font-bold text-gray-900">Faculty Dashboard</h1>
-                            <button className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors duration-200">
+                            <button
+                                onClick={openCreate}
+                                className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors duration-200"
+                            >
                                 + Post New Internship
                             </button>
                         </div>
 
-                        {/* Stats Cards */}
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
                             <div className="bg-white overflow-hidden shadow rounded-lg">
                                 <div className="p-5">
-                                    <div className="flex items-center">
-                                        <div className="flex-shrink-0 bg-indigo-50 rounded-md p-3">
-                                            <svg className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                            </svg>
-                                        </div>
-                                        <div className="ml-5 w-0 flex-1">
-                                            <dl>
-                                                <dt className="text-sm font-medium text-gray-500 truncate">Active Internships</dt>
-                                                <dd>
-                                                    <div className="text-lg font-medium text-gray-900">4</div>
-                                                </dd>
-                                            </dl>
-                                        </div>
-                                    </div>
+                                    <dl>
+                                        <dt className="text-sm font-medium text-gray-500 truncate">Active Internships</dt>
+                                        <dd className="text-lg font-medium text-gray-900">{activeCount}</dd>
+                                    </dl>
                                 </div>
                             </div>
-
                             <div className="bg-white overflow-hidden shadow rounded-lg">
                                 <div className="p-5">
-                                    <div className="flex items-center">
-                                        <div className="flex-shrink-0 bg-green-50 rounded-md p-3">
-                                            <svg className="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                            </svg>
-                                        </div>
-                                        <div className="ml-5 w-0 flex-1">
-                                            <dl>
-                                                <dt className="text-sm font-medium text-gray-500 truncate">Total Applicants</dt>
-                                                <dd>
-                                                    <div className="text-lg font-medium text-gray-900">48</div>
-                                                </dd>
-                                            </dl>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white overflow-hidden shadow rounded-lg">
-                                <div className="p-5">
-                                    <div className="flex items-center">
-                                        <div className="flex-shrink-0 bg-yellow-50 rounded-md p-3">
-                                            <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-                                        <div className="ml-5 w-0 flex-1">
-                                            <dl>
-                                                <dt className="text-sm font-medium text-gray-500 truncate">Pending Reviews</dt>
-                                                <dd>
-                                                    <div className="text-lg font-medium text-gray-900">15</div>
-                                                </dd>
-                                            </dl>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white overflow-hidden shadow rounded-lg">
-                                <div className="p-5">
-                                    <div className="flex items-center">
-                                        <div className="flex-shrink-0 bg-purple-50 rounded-md p-3">
-                                            <svg className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-                                        <div className="ml-5 w-0 flex-1">
-                                            <dl>
-                                                <dt className="text-sm font-medium text-gray-500 truncate">Interviews set</dt>
-                                                <dd>
-                                                    <div className="text-lg font-medium text-gray-900">8</div>
-                                                </dd>
-                                            </dl>
-                                        </div>
-                                    </div>
+                                    <dl>
+                                        <dt className="text-sm font-medium text-gray-500 truncate">Total Applicants</dt>
+                                        <dd className="text-lg font-medium text-gray-900">
+                                            {Object.values(applicantCounts).reduce((a, b) => a + b, 0)}
+                                        </dd>
+                                    </dl>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Posted Internships Table */}
                         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                            <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-                                <div>
-                                    <h3 className="text-lg leading-6 font-medium text-gray-900">Active Listings</h3>
-                                    <p className="mt-1 max-w-2xl text-sm text-gray-500">Manage your currently active internship postings.</p>
-                                </div>
-                                <button className="text-sm text-primary font-medium hover:text-indigo-800">View All</button>
+                            <div className="px-4 py-5 sm:px-6">
+                                <h3 className="text-lg leading-6 font-medium text-gray-900">Active Listings</h3>
+                                <p className="mt-1 max-w-2xl text-sm text-gray-500">Manage your currently active internship postings.</p>
                             </div>
                             <div className="border-t border-gray-200">
-                                <ul className="divide-y divide-gray-200">
-                                    {[
-                                        { title: 'Frontend Developer Intern', applicants: 24, posted: '2 days ago', status: 'Active' },
-                                        { title: 'UX/UI Designer Intern', applicants: 12, posted: '5 days ago', status: 'Active' },
-                                        { title: 'Backend Developer Intern', applicants: 8, posted: '1 week ago', status: 'Active' },
-                                    ].map((job, index) => (
-                                        <li key={index}>
-                                            <div className="px-4 py-4 sm:px-6">
-                                                <div className="flex items-center justify-between">
+                                {loading ? (
+                                    <div className="p-6 text-center text-gray-500">Loading...</div>
+                                ) : internships.length === 0 ? (
+                                    <div className="p-6 text-center text-gray-500">No internships posted yet.</div>
+                                ) : (
+                                    <ul className="divide-y divide-gray-200">
+                                        {internships.map((job) => (
+                                            <li key={job._id}>
+                                                <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
                                                     <div>
                                                         <p className="text-sm font-medium text-primary truncate">{job.title}</p>
-                                                        <p className="text-sm text-gray-500">Posted {job.posted}</p>
+                                                        <p className="text-sm text-gray-500">
+                                                            Posted {formatDate(job.createdAt)} • {job.companyName}
+                                                        </p>
                                                     </div>
                                                     <div className="flex items-center space-x-4">
                                                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                            {job.status}
+                                                            {job.status || 'Active'}
                                                         </span>
-                                                        <span className="text-sm text-gray-500">{job.applicants} Applicants</span>
-                                                        <button className="text-gray-400 hover:text-gray-500">
+                                                        <span className="text-sm text-gray-500">{applicantCounts[job._id] ?? '-'} Applicants</span>
+                                                        <button
+                                                            onClick={() => openEdit(job)}
+                                                            className="p-1 text-gray-400 hover:text-primary rounded"
+                                                            title="Edit"
+                                                        >
                                                             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                             </svg>
                                                         </button>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
                         </div>
                     </div>
                 </main>
             </div>
+
+            {showModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                                {editingId ? 'Edit Internship' : 'Post New Internship'}
+                            </h3>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Title</label>
+                                    <input
+                                        type="text"
+                                        name="title"
+                                        required
+                                        value={formData.title}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm p-2 border"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Company/Organization</label>
+                                    <input
+                                        type="text"
+                                        name="companyName"
+                                        required
+                                        value={formData.companyName}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm p-2 border"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                                    <textarea
+                                        name="description"
+                                        required
+                                        rows={3}
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm p-2 border"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Required Skills (comma-separated)</label>
+                                    <input
+                                        type="text"
+                                        name="requiredSkills"
+                                        value={formData.requiredSkills}
+                                        onChange={handleChange}
+                                        placeholder="e.g. JavaScript, React, Python"
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm p-2 border"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Duration</label>
+                                    <input
+                                        type="text"
+                                        name="duration"
+                                        required
+                                        value={formData.duration}
+                                        onChange={handleChange}
+                                        placeholder="e.g. 3 months"
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm p-2 border"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Deadline</label>
+                                    <input
+                                        type="date"
+                                        name="deadline"
+                                        required
+                                        value={formData.deadline}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm p-2 border"
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-2 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowModal(false)}
+                                        className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-indigo-700"
+                                    >
+                                        {editingId ? 'Update' : 'Post'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,7 +1,48 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { authAPI } from '../../api/api';
 
 const Register = () => {
+    const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 'student',
+        department: '',
+        year: '',
+    });
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+            const { data } = await authAPI.register(formData);
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                const user = data.user;
+                if (user.role === 'student') navigate('/student/dashboard');
+                else if (user.role === 'faculty') navigate('/faculty/dashboard');
+                else if (user.role === 'admin') navigate('/admin/dashboard');
+                else navigate('/');
+                window.location.reload();
+            } else {
+                navigate('/login');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Registration failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -18,7 +59,10 @@ const Register = () => {
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-                    <form className="space-y-6" action="#" method="POST">
+                    <form className="space-y-6" onSubmit={handleSubmit}>
+                        {error && (
+                            <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+                        )}
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                                 Full Name
@@ -30,6 +74,8 @@ const Register = () => {
                                     type="text"
                                     autoComplete="name"
                                     required
+                                    value={formData.name}
+                                    onChange={handleChange}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                 />
                             </div>
@@ -46,76 +92,10 @@ const Register = () => {
                                     type="email"
                                     autoComplete="email"
                                     required
+                                    value={formData.email}
+                                    onChange={handleChange}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                 />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label htmlFor="enrollmentNo" className="block text-sm font-medium text-gray-700">
-                                Enrollment Number
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="enrollmentNo"
-                                    name="enrollmentNo"
-                                    type="text"
-                                    required
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label htmlFor="program" className="block text-sm font-medium text-gray-700">
-                                Program
-                            </label>
-                            <div className="mt-1">
-                                <select
-                                    id="program"
-                                    name="program"
-                                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                                >
-                                    <option value="B.Tech CSE">B.Tech CSE</option>
-                                    <option value="B.Tech ECE">B.Tech ECE</option>
-                                    <option value="B.Tech Mechanical">B.Tech Mechanical</option>
-                                    <option value="B.Tech Civil">B.Tech Civil</option>
-                                    <option value="BCA">BCA</option>
-                                    <option value="B.Sc IT">B.Sc IT</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label htmlFor="semester" className="block text-sm font-medium text-gray-700">
-                                    Semester
-                                </label>
-                                <div className="mt-1">
-                                    <select
-                                        id="semester"
-                                        name="semester"
-                                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                                    >
-                                        {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
-                                            <option key={sem} value={sem}>{sem}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div>
-                                <label htmlFor="section" className="block text-sm font-medium text-gray-700">
-                                    Section
-                                </label>
-                                <div className="mt-1">
-                                    <input
-                                        id="section"
-                                        name="section"
-                                        type="text"
-                                        placeholder="e.g. A"
-                                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                                    />
-                                </div>
                             </div>
                         </div>
 
@@ -127,11 +107,12 @@ const Register = () => {
                                 <select
                                     id="role"
                                     name="role"
+                                    value={formData.role}
+                                    onChange={handleChange}
                                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                 >
                                     <option value="student">Student</option>
-                                    <option value="employer">Employer</option>
-                                    <option value="admin">Admin</option>
+                                    <option value="faculty">Faculty</option>
                                 </select>
                             </div>
                         </div>
@@ -147,6 +128,9 @@ const Register = () => {
                                     type="password"
                                     autoComplete="new-password"
                                     required
+                                    minLength={6}
+                                    value={formData.password}
+                                    onChange={handleChange}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                 />
                             </div>
@@ -155,9 +139,10 @@ const Register = () => {
                         <div>
                             <button
                                 type="submit"
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                disabled={loading}
+                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70"
                             >
-                                Sign up
+                                {loading ? 'Signing up...' : 'Sign up'}
                             </button>
                         </div>
                     </form>

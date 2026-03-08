@@ -1,44 +1,60 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../../layout/Navbar';
 import Sidebar from '../../layout/Sidebar';
+import { applicationAPI, nocAPI } from '../../api/api';
 
 const MyApplications = () => {
-    // Mock Data for Applications
-    const applications = [
-        {
-            id: 1,
-            type: 'NOC Request',
-            company: 'Google India',
-            role: 'Software Engineer Intern',
-            appliedDate: '2025-05-10',
-            status: 'Pending',
-            remarks: 'Under verification by CDC'
-        },
-        {
-            id: 2,
-            type: 'NOC Request',
-            company: 'Microsoft',
-            role: 'Research Intern',
-            appliedDate: '2025-04-15',
-            status: 'Approved',
-            remarks: 'NOC Issued. Download from documents.'
-        },
-        {
-            id: 3,
-            type: 'Internship Application',
-            company: 'TCS',
-            role: 'System Engineer',
-            appliedDate: '2025-02-20',
-            status: 'Rejected',
-            remarks: 'Profile did not match requirements.'
-        }
-    ];
+    const [applications, setApplications] = useState([]);
+    const [nocRequests, setNocRequests] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetch = async () => {
+            try {
+                const [appRes, nocRes] = await Promise.all([
+                    applicationAPI.getMyApplications(),
+                    nocAPI.getMyRequests(),
+                ]);
+                setApplications(appRes.data || []);
+                setNocRequests(nocRes.data || []);
+            } catch {
+                setApplications([]);
+                setNocRequests([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetch();
+    }, []);
 
     const getStatusColor = (status) => {
-        if (status === 'Approved') return 'bg-green-100 text-green-800';
-        if (status === 'Rejected') return 'bg-red-100 text-red-800';
+        if (status === 'approved' || status === 'Approved' || status === 'accepted') return 'bg-green-100 text-green-800';
+        if (status === 'rejected' || status === 'Rejected') return 'bg-red-100 text-red-800';
         return 'bg-yellow-100 text-yellow-800';
     };
+
+    const formatDate = (d) => (d ? new Date(d).toLocaleDateString() : '-');
+
+    const allItems = [
+        ...applications.map((a) => ({
+            id: a._id,
+            type: 'Internship Application',
+            company: a.internshipId?.companyName || 'N/A',
+            role: a.internshipId?.title || 'N/A',
+            appliedDate: a.createdAt,
+            status: a.status,
+            remarks: a.status === 'applied' ? 'Under review' : a.status === 'accepted' ? 'Application accepted' : a.status === 'rejected' ? 'Application rejected' : '',
+        })),
+        ...nocRequests.map((r) => ({
+            id: r._id,
+            type: 'NOC Request',
+            company: r.companyName,
+            role: 'NOC Verification',
+            appliedDate: r.createdAt,
+            status: r.approvalStatus,
+            remarks: r.approvalStatus === 'pending' ? 'Under verification by CDC' : r.approvalStatus === 'approved' ? 'NOC Issued' : r.remarks || 'Rejected',
+        })),
+    ].sort((a, b) => new Date(b.appliedDate) - new Date(a.appliedDate));
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">

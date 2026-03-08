@@ -4,7 +4,7 @@ import Sidebar from '../../layout/Sidebar';
 
 const NOCRequest = () => {
     const [formData, setFormData] = useState({
-        internshipType: '', // Industry or Summer
+        internshipType: 'Industry',
         companyName: '',
         companyType: '', // Corporate, Research, etc.
         domain: '',
@@ -21,10 +21,43 @@ const NOCRequest = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const [offerLetter, setOfferLetter] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        alert('NOC Request Submitted Successfully! (Mock)');
-        // In real app, submit formData and file to backend
+        if (!offerLetter) {
+            alert('Please upload your offer letter');
+            return;
+        }
+        setSubmitting(true);
+        try {
+            const { nocAPI } = await import('../../api/api');
+            await nocAPI.create({
+                ...formData,
+                offerLetter,
+            });
+            alert('NOC Request Submitted Successfully!');
+            setFormData({
+                internshipType: 'Industry',
+                companyName: '',
+                companyType: '',
+                domain: '',
+                location: '',
+                stipendType: '',
+                stipend: '',
+                duration: '',
+                hrName: '',
+                hrEmail: '',
+                hrPhone: '',
+            });
+            setOfferLetter(null);
+            document.getElementById('file-upload')?.value && (document.getElementById('file-upload').value = '');
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to submit');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -45,35 +78,19 @@ const NOCRequest = () => {
                                 {/* Internship Type */}
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-900 uppercase tracking-wider mb-4">Internship Category</h4>
-                                    <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2">
-                                        <div className="flex items-center">
-                                            <input
-                                                id="type-industry"
-                                                name="internshipType"
-                                                type="radio"
-                                                value="Industry"
-                                                required
-                                                onChange={handleChange}
-                                                className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
-                                            />
-                                            <label htmlFor="type-industry" className="ml-3 block text-sm font-medium text-gray-700">
-                                                Industry Internship (Final Year)
-                                            </label>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <input
-                                                id="type-summer"
-                                                name="internshipType"
-                                                type="radio"
-                                                value="Summer"
-                                                required
-                                                onChange={handleChange}
-                                                className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
-                                            />
-                                            <label htmlFor="type-summer" className="ml-3 block text-sm font-medium text-gray-700">
-                                                Summer Internship (1st-3rd Year)
-                                            </label>
-                                        </div>
+                                    <div className="flex items-center">
+                                        <input
+                                            id="type-industry"
+                                            name="internshipType"
+                                            type="radio"
+                                            value="Industry"
+                                            checked={formData.internshipType === 'Industry'}
+                                            onChange={handleChange}
+                                            className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
+                                        />
+                                        <label htmlFor="type-industry" className="ml-3 block text-sm font-medium text-gray-700">
+                                            Industry Internship (Final Year)
+                                        </label>
                                     </div>
                                 </div>
 
@@ -290,7 +307,14 @@ const NOCRequest = () => {
                                                     className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary"
                                                 >
                                                     <span>Upload Offer Letter</span>
-                                                    <input id="file-upload" name="file-upload" type="file" className="sr-only" required />
+                                                    <input
+                                                        id="file-upload"
+                                                        name="file-upload"
+                                                        type="file"
+                                                        accept=".pdf,.png,.jpg,.jpeg"
+                                                        className="sr-only"
+                                                        onChange={(e) => setOfferLetter(e.target.files?.[0])}
+                                                    />
                                                 </label>
                                                 <p className="pl-1">or drag and drop</p>
                                             </div>
@@ -309,9 +333,10 @@ const NOCRequest = () => {
                                         </button>
                                         <button
                                             type="submit"
-                                            className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                            disabled={submitting}
+                                            className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
                                         >
-                                            Submit NOC Request
+                                            {submitting ? 'Submitting...' : 'Submit NOC Request'}
                                         </button>
                                     </div>
                                 </div>
