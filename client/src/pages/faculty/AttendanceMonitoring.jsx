@@ -139,12 +139,3 @@ const AttendanceMonitoring = () => {
 };
 
 export default AttendanceMonitoring;
-<<<<<<< HEAD
-=======
-
-
-
-
-
-
->>>>>>> a98a36b35ff0b99c15b82464e1347e504a7a0010

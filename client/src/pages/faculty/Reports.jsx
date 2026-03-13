@@ -271,9 +271,4 @@ const Reports = () => {
     );
 };
 
-<<<<<<< HEAD
 export default Reports;
-=======
-
-export default Reports;
->>>>>>> a98a36b35ff0b99c15b82464e1347e504a7a0010
