@@ -1,7 +1,10 @@
 const AttendanceLog = require("../models/AttendanceLog");
 const Application = require("../models/Application");
 const Internship = require("../models/Internship");
+<<<<<<< HEAD
 const InternshipRecord = require("../models/InternshipRecord");
+=======
+>>>>>>> a98a36b35ff0b99c15b82464e1347e504a7a0010
 
 exports.getStudentsWithInternships = async (req, res) => {
   try {
@@ -76,6 +79,7 @@ exports.getAllLogs = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+<<<<<<< HEAD
 
 // GET /api/attendance/internship-attendance
 // Returns flattened attendance rows for all internshipRecords
@@ -124,3 +128,5 @@ exports.getInternshipAttendance = async (req, res) => {
       .json({ message: "Failed to load internship attendance records" });
   }
 };
+=======
+>>>>>>> a98a36b35ff0b99c15b82464e1347e504a7a0010
